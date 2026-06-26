@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yarn Sales Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAF6EF;
+    --surface:#FFFFFF;
+    --ink:#2A241F;
+    --muted:#8C8275;
+    --rule:#E4DCC9;
+    --indigo:#3B5BA5;
+    --indigo-dark:#2C4480;
+    --rust:#C1654A;
+    --green:#4F7942;
+    --amber:#B9790A;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{background:#3B5BA533;}
+  a{color:var(--indigo);}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 18px 60px;}
+
+  /* Header */
+  header.app-header{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    flex-wrap:wrap;gap:14px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:16px;margin-bottom:22px;
+  }
+  .brand-block{display:flex;flex-direction:column;gap:4px;}
+  .brand-name{
+    font-family:'Fraunces',serif;font-weight:700;font-style:italic;
+    font-size:clamp(28px,5vw,38px);line-height:1;letter-spacing:-0.01em;
+    border:none;background:transparent;color:var(--ink);
+    padding:2px 0;width:auto;max-width:90vw;
+  }
+  .brand-name:focus{outline:2px solid var(--indigo);border-radius:4px;}
+  .brand-sub{font-size:12.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;}
+  .header-right{display:flex;align-items:center;gap:10px;}
+  .sync-pill{
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);
+    display:flex;align-items:center;gap:6px;
+  }
+  .sync-btn{
+    background:none;border:1px solid var(--rule);border-radius:20px;
+    padding:6px 12px;font-size:12.5px;color:var(--ink);cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .sync-btn:hover{border-color:var(--indigo);color:var(--indigo);}
+
+  /* Tabs */
+  nav.tabs{display:flex;gap:4px;margin-bottom:24px;flex-wrap:wrap;border-bottom:1px solid var(--rule);}
+  nav.tabs button{
+    font-family:'Inter',sans-serif;font-weight:600;font-size:14px;
+    background:none;border:none;padding:10px 16px;cursor:pointer;
+    color:var(--muted);position:relative;top:1px;
+  }
+  nav.tabs button.active{color:var(--ink);border-bottom:2px solid var(--rust);}
+  nav.tabs button:hover{color:var(--ink);}
+
+  .panel{display:none;}
+  .panel.active{display:block;animation:fade .18s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(2px);}to{opacity:1;transform:none;}}
+
+  .card{
+    background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);
+    padding:22px;margin-bottom:18px;
+  }
+  h2.section-title{
+    font-family:'Fraunces',serif;font-weight:600;font-size:20px;margin:0 0 16px;
+  }
+  label{font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:5px;}
+  input,select,textarea{
+    font-family:'Inter',sans-serif;font-size:14.5px;color:var(--ink);
+    background:#fff;border:1px solid var(--rule);border-radius:7px;
+    padding:9px 11px;width:100%;
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--indigo);outline-offset:1px;border-color:var(--indigo);}
+  .field{margin-bottom:14px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;}
+  @media (max-width:680px){ .grid2,.grid4{grid-template-columns:1fr;} }
+
+  button.primary{
+    background:var(--indigo);color:#fff;border:none;border-radius:8px;
+    padding:11px 20px;font-weight:600;font-size:14.5px;cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  button.primary:hover{background:var(--indigo-dark);}
+  button.ghost{
+    background:none;border:1px solid var(--rule);border-radius:8px;
+    padding:10px 16px;font-size:14px;cursor:pointer;color:var(--ink);font-family:'Inter',sans-serif;
+  }
+  button.ghost:hover{border-color:var(--ink);}
+  button.danger{
+    background:none;border:1px solid var(--rust);color:var(--rust);
+    border-radius:8px;padding:9px 14px;font-size:13.5px;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  button.danger:hover{background:var(--rust);color:#fff;}
+  button.icon-btn{
+    background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;
+    padding:4px 7px;border-radius:6px;font-family:'Inter',sans-serif;
+  }
+  button.icon-btn:hover{background:var(--bg);color:var(--ink);}
+
+  /* live amount preview - signature element */
+  .amount-preview{
+    margin-top:18px;padding:18px 20px;background:var(--bg);border:1px dashed var(--rule);
+    border-radius:var(--radius);display:flex;justify-content:space-between;align-items:center;
+  }
+  .amount-preview .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+  .amount-preview .value{
+    font-family:'Fraunces',serif;font-weight:600;font-size:34px;color:var(--ink);font-variant-numeric:tabular-nums;
+  }
+  .amount-preview .value .cur{font-size:20px;color:var(--muted);margin-right:2px;}
+
+  .banner{
+    padding:10px 14px;border-radius:8px;font-size:13.5px;margin-bottom:14px;
+    background:#EEF3E8;color:var(--green);border:1px solid #cfe0c0;
+  }
+
+  /* Stats */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+  @media (max-width:680px){.stats{grid-template-columns:1fr;}}
+  .stat{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:16px 18px;}
+  .stat .label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+  .stat .val{font-family:'Fraunces',serif;font-weight:600;font-size:24px;font-variant-numeric:tabular-nums;}
+  .stat.due .val{color:var(--rust);}
+
+  /* Filters */
+  .filters{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;}
+  .filters .field{margin-bottom:0;min-width:140px;flex:1;}
+  .status-pills{display:flex;gap:6px;}
+  .status-pills button{
+    border:1px solid var(--rule);background:#fff;border-radius:20px;padding:8px 14px;
+    font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;color:var(--muted);
+  }
+  .status-pills button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  /* Table */
+  .table-wrap{overflow-x:auto;border:1px solid var(--rule);border-radius:var(--radius);}
+  table{width:100%;border-collapse:collapse;min-width:760px;font-size:13.8px;}
+  thead th{
+    text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--muted);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--rule);
+    background:var(--bg);position:sticky;top:0;
+  }
+  tbody td{padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:middle;}
+  tbody tr:hover{background:#FBF8F2;}
+  .serial{font-family:'IBM Plex Mono',monospace;color:var(--muted);}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  .swatch{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;border:1px solid rgba(0,0,0,.15);vertical-align:middle;}
+  .badge{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px;display:inline-block;}
+  .badge.paid{background:#EEF3E8;color:var(--green);}
+  .badge.due{background:#FBEAE3;color:var(--rust);}
+  .row-actions{display:flex;gap:4px;}
+  .empty-state{padding:40px 20px;text-align:center;color:var(--muted);}
+  .empty-state .big{font-family:'Fraunces',serif;font-size:20px;color:var(--ink);margin-bottom:6px;}
+
+  /* Catalog chips */
+  .chip-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .chip{
+    display:flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--rule);
+    border-radius:20px;padding:6px 8px 6px 12px;font-size:13.5px;
+  }
+  .chip button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px;}
+  .chip button:hover{color:var(--rust);}
+  .add-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;}
+  .add-row .field{margin-bottom:0;}
+  .colour-input-wrap{display:flex;gap:8px;align-items:center;}
+  input[type="color"]{width:42px;height:38px;padding:2px;cursor:pointer;}
+
+  .danger-zone{border:1px dashed var(--rust);border-radius:var(--radius);padding:16px 18px;margin-top:10px;}
+  .danger-zone h3{margin:0 0 10px;font-size:14px;color:var(--rust);font-family:'Inter',sans-serif;}
+  .danger-zone .row{display:flex;gap:10px;flex-wrap:wrap;}
+
+  .footnote{font-size:12px;color:var(--muted);margin-top:24px;line-height:1.6;}
+  .loading{padding:60px 0;text-align:center;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:13px;}
+
+  /* inline edit row */
+  .edit-input{width:100%;min-width:80px;font-size:13px;padding:6px 7px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app-header">
+    <div class="brand-block">
+      <input class="brand-name" id="businessNameInput" value="Yarn Sales Ledger" spellcheck="false" aria-label="Business name">
+      <div class="brand-sub">Daily cotton yarn sales &middot; saved on this device</div>
+    </div>
+    <div class="header-right">
+      <span class="sync-pill" id="syncIndicator">● loading…</span>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="new" class="active">New sale</button>
+    <button data-tab="ledger">Ledger</button>
+    <button data-tab="catalog">Catalog</button>
+  </nav>
+
+  <div id="appBody">
+    <div class="loading">Loading your ledger data…</div>
+  </div>
+
+  <p class="footnote">
+    Data is saved in <strong>this browser only</strong> (using local storage on this device). It won't appear on another phone, computer, or browser,
+    and clearing your browser data will erase it. Use <em>Export CSV</em> in the Ledger tab regularly to keep a backup outside the browser.
+  </p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const DEFAULT_COUNTS = ['10s','16s','20s','24s','30s','40s','60s','80s'];
+  const DEFAULT_COLOURS = [
+    {name:'White', hex:'#F5F2EA'},
+    {name:'Black', hex:'#1C1C1C'},
+    {name:'Red', hex:'#C0392B'},
+    {name:'Blue', hex:'#2E5C8A'},
+    {name:'Green', hex:'#3F7D4A'},
+    {name:'Yellow', hex:'#E0B83C'},
+    {name:'Pink', hex:'#D98AA0'},
+    {name:'Grey', hex:'#9B9690'}
+  ];
+
+  let state = {
+    sales: [],
+    counts: DEFAULT_COUNTS.slice(),
+    colours: DEFAULT_COLOURS.slice(),
+    nextSerial: 1,
+    businessName: 'Yarn Sales Ledger',
+    currency: '₹',
+    loaded: false
+  };
+
+  let activeTab = 'new';
+  let ledgerFilters = { from:'', to:'', q:'', status:'all' };
+  let editingId = null;
+
+  const appBody = document.getElementById('appBody');
+  const syncIndicator = document.getElementById('syncIndicator');
+  const businessNameInput = document.getElementById('businessNameInput');
+
+  function fmtMoney(n){
+    const v = isFinite(n) ? n : 0;
+    return state.currency + ' ' + v.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function pad4(n){ return String(n).padStart(4,'0'); }
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function escapeHtml(s){
+    return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- storage (browser localStorage — this device/browser only) ----------
+  const STORAGE_PREFIX = 'yarnLedger_';
+  let storageAvailable = true;
+
+  function safeGet(key){
+    try{
+      return localStorage.getItem(STORAGE_PREFIX + key);
+    }catch(e){
+      storageAvailable = false;
+      return null;
+    }
+  }
+  function safeSet(key, value){
+    try{
+      localStorage.setItem(STORAGE_PREFIX + key, value);
+      return true;
+    }catch(e){
+      storageAvailable = false;
+      console.error('localStorage set failed', key, e);
+      return false;
+    }
+  }
+
+  async function loadAll(){
+    const salesRaw = safeGet('sales');
+    const catalogRaw = safeGet('catalog');
+    const metaRaw = safeGet('meta');
+    try{ state.sales = salesRaw ? JSON.parse(salesRaw) : []; }catch(e){ state.sales = []; }
+    try{
+      const c = catalogRaw ? JSON.parse(catalogRaw) : null;
+      state.counts = (c && c.counts && c.counts.length) ? c.counts : DEFAULT_COUNTS.slice();
+      state.colours = (c && c.colours && c.colours.length) ? c.colours : DEFAULT_COLOURS.slice();
+    }catch(e){ state.counts = DEFAULT_COUNTS.slice(); state.colours = DEFAULT_COLOURS.slice(); }
+    try{
+      const m = metaRaw ? JSON.parse(metaRaw) : null;
+      state.nextSerial = (m && m.nextSerial) ? m.nextSerial : (state.sales.length + 1);
+      state.businessName = (m && m.businessName) ? m.businessName : 'Yarn Sales Ledger';
+      state.currency = (m && m.currency) ? m.currency : '₹';
+    }catch(e){}
+    state.loaded = true;
+    businessNameInput.value = state.businessName;
+    syncIndicator.textContent = storageAvailable
+      ? '● saved locally — ' + new Date().toLocaleTimeString()
+      : '⚠ storage unavailable in this browser';
+  }
+
+  async function persistSales(){ safeSet('sales', JSON.stringify(state.sales)); touchSyncIndicator(); }
+  async function persistCatalog(){ safeSet('catalog', JSON.stringify({counts:state.counts, colours:state.colours})); touchSyncIndicator(); }
+  async function persistMeta(){ safeSet('meta', JSON.stringify({nextSerial:state.nextSerial, businessName:state.businessName, currency:state.currency})); touchSyncIndicator(); }
+  function touchSyncIndicator(){
+    syncIndicator.textContent = storageAvailable
+      ? '● saved locally — ' + new Date().toLocaleTimeString()
+      : '⚠ storage unavailable in this browser';
+  }
+
+  // ---------- render root ----------
+  function render(){
+    if(!state.loaded){ appBody.innerHTML = '<div class="loading">Loading your ledger data…</div>'; return; }
+    if(activeTab === 'new') renderNewSale();
+    else if(activeTab === 'ledger') renderLedger();
+    else renderCatalog();
+  }
+
+  function setTab(tab){
+    activeTab = tab;
+    document.querySelectorAll('#tabs button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    render();
+  }
+  document.getElementById('tabs').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-tab]');
+    if(!btn) return;
+    setTab(btn.dataset.tab);
+  });
+
+  businessNameInput.addEventListener('change', async ()=>{
+    state.businessName = businessNameInput.value.trim() || 'Yarn Sales Ledger';
+    await persistMeta();
+  });
+
+  // ============================================================
+  // NEW SALE
+  // ============================================================
+  function renderNewSale(){
+    const countOptions = state.counts.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    const colourOptions = state.colours.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
+
+    appBody.innerHTML = `
+      <div class="card">
+        <h2 class="section-title">Record a sale</h2>
+        <div id="newSaleBanner"></div>
+        <form id="saleForm">
+          <div class="grid2">
+            <div class="field">
+              <label for="f_date">Date</label>
+              <input type="date" id="f_date" value="${todayStr()}" required>
+            </div>
+            <div class="field">
+              <label for="f_status">Payment status</label>
+              <select id="f_status">
+                <option value="paid">Paid</option>
+                <option value="due">Due</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label for="f_name">Customer name</label>
+              <input type="text" id="f_name" placeholder="e.g. Ramesh Textiles" required>
+            </div>
+            <div class="field">
+              <label for="f_phone">Customer phone</label>
+              <input type="text" id="f_phone" placeholder="e.g. 98765 43210">
+            </div>
+          </div>
+          <div class="grid4">
+            <div class="field">
+              <label for="f_count">Count</label>
+              <select id="f_count" required>${countOptions || '<option value="">Add a count in Catalog</option>'}</select>
+            </div>
+            <div class="field">
+              <label for="f_colour">Colour</label>
+              <select id="f_colour" required>${colourOptions || '<option value="">Add a colour in Catalog</option>'}</select>
+            </div>
+            <div class="field">
+              <label for="f_qty">Quantity (kg)</label>
+              <input type="number" id="f_qty" min="0" step="0.01" placeholder="0.00" required>
+            </div>
+            <div class="field">
+              <label for="f_rate">Rate / kg</label>
+              <input type="number" id="f_rate" min="0" step="0.01" placeholder="0.00" required>
+            </div>
+          </div>
+          <div class="field">
+            <label for="f_notes">Notes (optional)</label>
+            <input type="text" id="f_notes" placeholder="e.g. delivered via courier">
+          </div>
+
+          <div class="amount-preview">
+            <div>
+              <div class="label">Amount</div>
+              <div class="value"><span class="cur">${escapeHtml(state.currency)}</span><span id="amountPreview">0.00</span></div>
+            </div>
+            <button type="submit" class="primary">Add sale</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    const qty = document.getElementById('f_qty');
+    const rate = document.getElementById('f_rate');
+    const preview = document.getElementById('amountPreview');
+    function updatePreview(){
+      const q = parseFloat(qty.value) || 0;
+      const r = parseFloat(rate.value) || 0;
+      preview.textContent = (q*r).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    }
+    qty.addEventListener('input', updatePreview);
+    rate.addEventListener('input', updatePreview);
+
+    document.getElementById('saleForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const count = document.getElementById('f_count').value;
+      const colour = document.getElementById('f_colour').value;
+      if(!count || !colour){
+        showBanner('newSaleBanner', 'Add at least one count and one colour in the Catalog tab first.', true);
+        return;
+      }
+      const sale = {
+        id: 's_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+        serial: state.nextSerial,
+        date: document.getElementById('f_date').value,
+        customerName: document.getElementById('f_name').value.trim(),
+        customerPhone: document.getElementById('f_phone').value.trim(),
+        count, colour,
+        qty: parseFloat(qty.value) || 0,
+        rate: parseFloat(rate.value) || 0,
+        status: document.getElementById('f_status').value,
+        notes: document.getElementById('f_notes').value.trim(),
+        createdAt: Date.now()
+      };
+      sale.amount = +(sale.qty * sale.rate).toFixed(2);
+      state.sales.push(sale);
+      state.nextSerial += 1;
+      await persistSales();
+      await persistMeta();
+      showBanner('newSaleBanner', `Sale No. ${pad4(sale.serial)} added — ${fmtMoney(sale.amount)} for ${escapeHtml(sale.customerName)}.`, false);
+      renderNewSale();
+    });
+  }
+
+  function showBanner(id, msg, isWarning){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = `<div class="banner" style="${isWarning ? 'background:#FBEAE3;color:var(--rust);border-color:#eccabf' : ''}">${msg}</div>`;
+    setTimeout(()=>{ if(el) el.innerHTML=''; }, 5000);
+  }
+
+  // ============================================================
+  // LEDGER
+  // ============================================================
+  function filteredSales(){
+    return state.sales.filter(s=>{
+      if(ledgerFilters.from && s.date < ledgerFilters.from) return false;
+      if(ledgerFilters.to && s.date > ledgerFilters.to) return false;
+      if(ledgerFilters.status !== 'all' && s.status !== ledgerFilters.status) return false;
+      if(ledgerFilters.q){
+        const q = ledgerFilters.q.toLowerCase();
+        const hay = (s.customerName+' '+s.customerPhone+' '+s.count+' '+s.colour).toLowerCase();
+        if(!hay.includes(q)) return false;
+      }
+      return true;
+    }).sort((a,b)=> (b.date.localeCompare(a.date)) || (b.serial - a.serial));
+  }
+
+  function renderLedger(){
+    const all = state.sales;
+    const today = todayStr();
+    const monthPrefix = today.slice(0,7);
+    const todayTotal = all.filter(s=>s.date===today).reduce((sum,s)=>sum+s.amount,0);
+    const monthTotal = all.filter(s=>s.date.startsWith(monthPrefix)).reduce((sum,s)=>sum+s.amount,0);
+    const outstanding = all.filter(s=>s.status==='due').reduce((sum,s)=>sum+s.amount,0);
+
+    const rows = filteredSales();
+    const colourMap = {};
+    state.colours.forEach(c=>colourMap[c.name]=c.hex);
+
+    appBody.innerHTML = `
+      <div class="stats">
+        <div class="stat"><div class="label">Today</div><div class="val">${fmtMoney(todayTotal)}</div></div>
+        <div class="stat"><div class="label">This month</div><div class="val">${fmtMoney(monthTotal)}</div></div>
+        <div class="stat due"><div class="label">Outstanding (due)</div><div class="val">${fmtMoney(outstanding)}</div></div>
+      </div>
+
+      <div class="card">
+        <div class="filters">
+          <div class="field">
+            <label>From</label>
+            <input type="date" id="filt_from" value="${ledgerFilters.from}">
+          </div>
+          <div class="field">
+            <label>To</label>
+            <input type="date" id="filt_to" value="${ledgerFilters.to}">
+          </div>
+          <div class="field" style="flex:2;">
+            <label>Search customer / phone / count / colour</label>
+            <input type="text" id="filt_q" value="${escapeHtml(ledgerFilters.q)}" placeholder="Type to search…">
+          </div>
+          <div class="field">
+            <label>Status</label>
+            <div class="status-pills">
+              <button data-s="all" class="${ledgerFilters.status==='all'?'active':''}">All</button>
+              <button data-s="paid" class="${ledgerFilters.status==='paid'?'active':''}">Paid</button>
+              <button data-s="due" class="${ledgerFilters.status==='due'?'active':''}">Due</button>
+            </div>
+          </div>
+          <button class="ghost" id="clearFilters">Clear</button>
+          <button class="ghost" id="exportCsv">⬇ Export CSV</button>
+        </div>
+
+        ${rows.length === 0 ? `
+          <div class="empty-state">
+            <div class="big">No sales here yet</div>
+            <div>Add your first sale from the “New sale” tab, or adjust the filters above.</div>
+          </div>
+        ` : `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>No.</th><th>Date</th><th>Customer</th><th>Phone</th><th>Count</th><th>Colour</th>
+                <th>Qty (kg)</th><th>Rate</th><th>Amount</th><th>Status</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="ledgerBody">
+              ${rows.map(s => rowHtml(s, colourMap)).join('')}
+            </tbody>
+          </table>
+        </div>
+        `}
+      </div>
+    `;
+
+    document.getElementById('filt_from').addEventListener('change', e=>{ ledgerFilters.from = e.target.value; renderLedger(); });
+    document.getElementById('filt_to').addEventListener('change', e=>{ ledgerFilters.to = e.target.value; renderLedger(); });
+    document.getElementById('filt_q').addEventListener('input', e=>{ ledgerFilters.q = e.target.value; renderLedger(); });
+    document.querySelectorAll('.status-pills button').forEach(b=>{
+      b.addEventListener('click', ()=>{ ledgerFilters.status = b.dataset.s; renderLedger(); });
+    });
+    document.getElementById('clearFilters').addEventListener('click', ()=>{
+      ledgerFilters = {from:'',to:'',q:'',status:'all'}; renderLedger();
+    });
+    document.getElementById('exportCsv').addEventListener('click', exportCsv);
+
+    if(rows.length){
+      rows.forEach(s=>{
+        const editBtn = document.getElementById('edit_'+s.id);
+        const delBtn = document.getElementById('del_'+s.id);
+        if(editBtn) editBtn.addEventListener('click', ()=> startEdit(s.id));
+        if(delBtn) delBtn.addEventListener('click', ()=> deleteSale(s.id));
+      });
+      if(editingId){
+        const saveBtn = document.getElementById('save_'+editingId);
+        const cancelBtn = document.getElementById('cancel_'+editingId);
+        if(saveBtn) saveBtn.addEventListener('click', ()=> saveEdit(editingId));
+        if(cancelBtn) cancelBtn.addEventListener('click', ()=>{ editingId=null; renderLedger(); });
+      }
+    }
+  }
+
+  function rowHtml(s, colourMap){
+    if(editingId === s.id){
+      const countOpts = state.counts.map(c=>`<option value="${escapeHtml(c)}" ${c===s.count?'selected':''}>${escapeHtml(c)}</option>`).join('');
+      const colourOpts = state.colours.map(c=>`<option value="${escapeHtml(c.name)}" ${c.name===s.colour?'selected':''}>${escapeHtml(c.name)}</option>`).join('');
+      return `<tr>
+        <td class="serial">${pad4(s.serial)}</td>
+        <td><input type="date" class="edit-input" id="e_date_${s.id}" value="${s.date}"></td>
+        <td><input type="text" class="edit-input" id="e_name_${s.id}" value="${escapeHtml(s.customerName)}"></td>
+        <td><input type="text" class="edit-input" id="e_phone_${s.id}" value="${escapeHtml(s.customerPhone)}"></td>
+        <td><select class="edit-input" id="e_count_${s.id}">${countOpts}</select></td>
+        <td><select class="edit-input" id="e_colour_${s.id}">${colourOpts}</select></td>
+        <td><input type="number" step="0.01" class="edit-input" id="e_qty_${s.id}" value="${s.qty}"></td>
+        <td><input type="number" step="0.01" class="edit-input" id="e_rate_${s.id}" value="${s.rate}"></td>
+        <td class="mono">${fmtMoney(s.qty*s.rate)}</td>
+        <td>
+          <select class="edit-input" id="e_status_${s.id}">
+            <option value="paid" ${s.status==='paid'?'selected':''}>Paid</option>
+            <option value="due" ${s.status==='due'?'selected':''}>Due</option>
+          </select>
+        </td>
+        <td class="row-actions">
+          <button class="icon-btn" id="save_${s.id}" title="Save">✓ Save</button>
+          <button class="icon-btn" id="cancel_${s.id}" title="Cancel">✕</button>
+        </td>
+      </tr>`;
+    }
+    const hex = colourMap[s.colour] || '#ccc';
+    return `<tr>
+      <td class="serial">${pad4(s.serial)}</td>
+      <td class="mono">${escapeHtml(s.date)}</td>
+      <td>${escapeHtml(s.customerName)}</td>
+      <td class="mono">${escapeHtml(s.customerPhone)}</td>
+      <td>${escapeHtml(s.count)}</td>
+      <td><span class="swatch" style="background:${hex}"></span>${escapeHtml(s.colour)}</td>
+      <td class="mono">${s.qty.toFixed(2)}</td>
+      <td class="mono">${s.rate.toFixed(2)}</td>
+      <td class="mono">${fmtMoney(s.amount)}</td>
+      <td><span class="badge ${s.status}">${s.status === 'paid' ? 'Paid' : 'Due'}</span></td>
+      <td class="row-actions">
+        <button class="icon-btn" id="edit_${s.id}" title="Edit">✎</button>
+        <button class="icon-btn" id="del_${s.id}" title="Delete">🗑</button>
+      </td>
+    </tr>`;
+  }
+
+  function startEdit(id){ editingId = id; renderLedger(); }
+
+  async function saveEdit(id){
+    const s = state.sales.find(x=>x.id===id);
+    if(!s) return;
+    s.date = document.getElementById('e_date_'+id).value || s.date;
+    s.customerName = document.getElementById('e_name_'+id).value.trim();
+    s.customerPhone = document.getElementById('e_phone_'+id).value.trim();
+    s.count = document.getElementById('e_count_'+id).value;
+    s.colour = document.getElementById('e_colour_'+id).value;
+    s.qty = parseFloat(document.getElementById('e_qty_'+id).value) || 0;
+    s.rate = parseFloat(document.getElementById('e_rate_'+id).value) || 0;
+    s.status = document.getElementById('e_status_'+id).value;
+    s.amount = +(s.qty * s.rate).toFixed(2);
+    editingId = null;
+    await persistSales();
+    renderLedger();
+  }
+
+  async function deleteSale(id){
+    if(!confirm('Delete this sale record? This cannot be undone.')) return;
+    state.sales = state.sales.filter(s=>s.id!==id);
+    await persistSales();
+    renderLedger();
+  }
+
+  function exportCsv(){
+    const rows = filteredSales();
+    const header = ['No.','Date','Customer','Phone','Count','Colour','Qty(kg)','Rate','Amount','Status','Notes'];
+    const lines = [header.join(',')];
+    rows.forEach(s=>{
+      const cells = [pad4(s.serial), s.date, s.customerName, s.customerPhone, s.count, s.colour,
+        s.qty, s.rate, s.amount, s.status, (s.notes||'').replace(/,/g,';')];
+      lines.push(cells.map(c => `"${String(c).replace(/"/g,'""')}"`).join(','));
+    });
+    const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `yarn-sales-${todayStr()}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ============================================================
+  // CATALOG
+  // ============================================================
+  function renderCatalog(){
+    appBody.innerHTML = `
+      <div class="card">
+        <h2 class="section-title">Counts</h2>
+        <div class="chip-list" id="countChips">
+          ${state.counts.map(c=>`<span class="chip">${escapeHtml(c)}<button data-c="${escapeHtml(c)}" class="rm-count">×</button></span>`).join('') || '<span style="color:var(--muted);font-size:13.5px;">No counts yet</span>'}
+        </div>
+        <div class="add-row">
+          <div class="field"><label>New count (e.g. 30s)</label><input type="text" id="newCount" placeholder="30s"></div>
+          <button class="ghost" id="addCountBtn">+ Add count</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Colours</h2>
+        <div class="chip-list" id="colourChips">
+          ${state.colours.map(c=>`<span class="chip"><span class="swatch" style="background:${c.hex}"></span>${escapeHtml(c.name)}<button data-c="${escapeHtml(c.name)}" class="rm-colour">×</button></span>`).join('') || '<span style="color:var(--muted);font-size:13.5px;">No colours yet</span>'}
+        </div>
+        <div class="add-row">
+          <div class="field"><label>New colour name</label><input type="text" id="newColourName" placeholder="Navy"></div>
+          <div class="field"><label>Swatch</label><div class="colour-input-wrap"><input type="color" id="newColourHex" value="#3B5BA5"></div></div>
+          <button class="ghost" id="addColourBtn">+ Add colour</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Business settings</h2>
+        <div class="field" style="max-width:160px;">
+          <label for="currencyInput">Currency symbol</label>
+          <input type="text" id="currencyInput" value="${escapeHtml(state.currency)}" maxlength="4">
+        </div>
+
+        <div class="danger-zone">
+          <h3>Danger zone</h3>
+          <div class="row">
+            <button class="danger" id="clearSalesBtn">Clear all sales records</button>
+            <button class="danger" id="resetCatalogBtn">Reset counts &amp; colours to defaults</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('addCountBtn').addEventListener('click', async ()=>{
+      const input = document.getElementById('newCount');
+      const val = input.value.trim();
+      if(!val) return;
+      if(state.counts.includes(val)){ alert('That count already exists.'); return; }
+      state.counts.push(val);
+      await persistCatalog();
+      renderCatalog();
+    });
+
+    document.querySelectorAll('.rm-count').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const c = btn.dataset.c;
+        if(state.sales.some(s=>s.count===c)){
+          if(!confirm(`"${c}" is used in existing sales records. Remove it from the catalog anyway? Existing records keep showing it.`)) return;
+        }
+        state.counts = state.counts.filter(x=>x!==c);
+        await persistCatalog();
+        renderCatalog();
+      });
+    });
+
+    document.getElementById('addColourBtn').addEventListener('click', async ()=>{
+      const nameInput = document.getElementById('newColourName');
+      const hexInput = document.getElementById('newColourHex');
+      const name = nameInput.value.trim();
+      if(!name) return;
+      if(state.colours.some(c=>c.name.toLowerCase()===name.toLowerCase())){ alert('That colour already exists.'); return; }
+      state.colours.push({name, hex: hexInput.value});
+      await persistCatalog();
+      renderCatalog();
+    });
+
+    document.querySelectorAll('.rm-colour').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const name = btn.dataset.c;
+        if(state.sales.some(s=>s.colour===name)){
+          if(!confirm(`"${name}" is used in existing sales records. Remove it from the catalog anyway? Existing records keep showing it.`)) return;
+        }
+        state.colours = state.colours.filter(x=>x.name!==name);
+        await persistCatalog();
+        renderCatalog();
+      });
+    });
+
+    document.getElementById('currencyInput').addEventListener('change', async (e)=>{
+      state.currency = e.target.value.trim() || '₹';
+      await persistMeta();
+      renderCatalog();
+    });
+
+    document.getElementById('clearSalesBtn').addEventListener('click', async ()=>{
+      if(!confirm('This will permanently delete ALL sales records saved in this browser. Continue?')) return;
+      if(!confirm('Are you absolutely sure? This cannot be undone.')) return;
+      state.sales = [];
+      state.nextSerial = 1;
+      await persistSales();
+      await persistMeta();
+      renderCatalog();
+    });
+
+    document.getElementById('resetCatalogBtn').addEventListener('click', async ()=>{
+      if(!confirm('Reset counts and colours to the default list? Custom entries will be removed.')) return;
+      state.counts = DEFAULT_COUNTS.slice();
+      state.colours = DEFAULT_COLOURS.slice();
+      await persistCatalog();
+      renderCatalog();
+    });
+  }
+
+  // ---------- boot ----------
+  (async function init(){
+    await loadAll();
+    setTab('new');
+  })();
+
+})();
+</script>
+</body>
+</html>
